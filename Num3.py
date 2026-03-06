@@ -64,7 +64,7 @@ def compute_D(x_core, r_coeur, lambdas):
     V = 2*np.pi*r_coeur/lambdas * NA
     u_infty = 2.405
     u = u_infty*(V/(V+1))*(1-u_infty**2/(6*(V+1)**3)-u_infty**4/(20*(V+1)**5))
-    w = np.sqrt(np.maximum(0.0000000001, V**2 - u**2))
+    w = np.sqrt(np.maximum(1e-20, V**2 - u**2))
     gamma = w/r_coeur
     beta = np.sqrt(gamma**2 + (k0*n_cladding)**2)
     neff = beta/k0
@@ -122,14 +122,14 @@ T1 = T0*np.sqrt(1+(L/Ld)**2)
 
 ################# C ##################
 new_r_coeur = 1 # um
-lambdas = np.linspace(1.0, 1.55, 1000)
+lambdas = np.linspace(1.0, 1.5, 1000)
 def D_at_15(x):
     return compute_D(x, new_r_coeur, lambdas)[0][-1]
 
 x_opt = brentq(D_at_15, 0.01, 0.2)
 print(x_opt)
 D_total, Dm, Dw, Ng, V = compute_D(x_opt, new_r_coeur, lambdas)
-print(Dw)
+#print(Dw)
 
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.plot(lambdas, Dm, 'k-.', label="$D_M$", lw=2)
