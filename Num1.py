@@ -41,7 +41,7 @@ def eq_diff(V, u, l):
     w_sq = max(V**2 - u**2, 1e-12)
     w = np.sqrt(w_sq)
     
-    if w < 1e-10:
+    if w < 1e-6:
         psi = 0 if l == 1 else (1 - 1/max(abs(l-1), 1e-10))
     else:
         psi = (kn(l, w)**2) / (kn(l-1, w) * kn(l+1, w))
@@ -68,12 +68,13 @@ neff_myagi = []
 neff_eqdiff = []
 Gamma = []
 
-step = 1e-5  # Pas d'intégration (ajustable selon la précision voulue)
+step = 1e-5 # Pas de dérivation (ajustable selon la précision voulue)
 
 for mode in modes:
     l = int(mode[2])
     m = int(mode[3])
     zeros = jn_zeros(l, m)
+    zeros_minus_1 = jn_zeros(l-1, m)
     cutoff = zeros[m-1]
     
     guess = cutoff * 0.85
@@ -85,31 +86,19 @@ for mode in modes:
     frac_puiss = 1-(u/V)**2*(1-psi)
     Gamma.append(frac_puiss)
 
-
-    u_val = cutoff  # Condition initiale à la coupure
-    V_start = cutoff
+    if l == 0 :
+        if m == 1:
+            u_val = 1e-6
+        else:
+            u_val = zeros_minus_1[m-2]
+    else:
+        u_val = zeros_minus_1[m-1]
+    V_start = u_val-1e-8
     V_end = V
     
-    if V_end > V_start:
-        n_iterations = int((V_end - V_start) / step)
-        V_array = np.linspace(V_start, V_end, n_iterations)
-        
-        # Array pour stocker la solution
-        sol_array = np.zeros(n_iterations)
-        
-        u = u_val  # condition initiale à la coupure
-        
-        # Itération selon la méthode de Euler
-        for j, V_val in enumerate(V_array):
-            du_dV = eq_diff(V_val, u, l)
-            next_u = u + step * du_dV
-            sol_array[j] = next_u
-            u = next_u
-        
-        u_eqdiff.append(float(sol_array[-1]))  # sol.append(sol_array[-1])
-    else:
-        # Le mode est évanescent (en dessous de la coupure)
-        u_eqdiff.append(np.nan)
+    sol = solve_ivp(lambda V, u: eq_diff(V, u, l), t_span=(V_start, V_end), y0=[V_start], rtol=1e-8)
+    u_val = sol.y[0][-1]
+    u_eqdiff.append(u_val)
     
     myagi = float(zeros[m-1]*(V/(V+1))*(1-zeros[m-1]**2/(6*(V+1)**3)-zeros[m-1]**4/(20*(V+1)**5)))
     u_myagi.append(myagi)
