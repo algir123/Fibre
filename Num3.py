@@ -2,9 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import kn
 from scipy.interpolate import interp1d
-from scipy.optimize import brentq
+from scipy.optimize import brentq, minimize
 from scipy.special import jv, kn, jn_zeros
-from scipy.optimize import fsolve
 
 c = 3*10**8 # m/s
 r_coeur = 5.28 # um
@@ -51,10 +50,8 @@ x_core = 0.02    #x: fraction molaire de GeO2
 lambdas = np.linspace(1.0, 1.5, 1000)
 k0 = 2*np.pi/lambdas
 
-def compute_D(x_core, r_coeur, lambdas):
-
+def compute_D(x_core, r_coeur, lambdas, x_cladding=0):
     k0 = 2*np.pi/lambdas
-    x_cladding = 0
     n_core = get_n(lambdas, x_core)
     n_cladding = get_n(lambdas, x_cladding)
     n2g = get_n_group(lambdas, x_cladding)
@@ -121,15 +118,29 @@ Ld = T0**2/np.abs(beta2)
 T1 = T0*np.sqrt(1+(L/Ld)**2)
 
 ################# C ##################
-new_r_coeur = 1 # um
+V_init = V[-1]
 lambdas = np.linspace(1.0, 1.5, 1000)
-def D_at_15(x):
-    return compute_D(x, new_r_coeur, lambdas)[0][-1]
+def D_at_15(x, r_coeur,x_cladding):
+    D_total, _, _, _, V = compute_D(x, r_coeur, lambdas, x_cladding)
+    obj = abs(D_total[-1]) + abs(V[-1]-V_init)*10
+    print(obj, "optimisation en cours...")
+    return obj
 
-x_opt = brentq(D_at_15, 0.01, 0.2)
-print(x_opt)
-D_total, Dm, Dw, Ng, V = compute_D(x_opt, new_r_coeur, lambdas)
+res = minimize(lambda x: D_at_15(x[0], x[1], x[2]), np.array([0.05, 1, 0.01]), bounds=((0, 0.2), (1, 5), (0, 0.1)))
+# res = minimize(lambda x: D_at_15(x[0], x[1], x[2]), np.array([0.10409373, 2.30174476, 0.0]), bounds=((0, 0.2), (1, 5), (0, 0.1)))
+print(res.x)
+D_total, Dm, Dw, Ng, V = compute_D(res.x[0], res.x[1], lambdas, res.x[2])
+print(V_init, V[-1], D_total[-1])
 #print(Dw)
+
+D_15 = D_total[-1]*1e-6
+Ng_15 = Ng[-1]
+Tg = Ng_15/c*20000
+beta2 = (1.5e-6)**2*D_15/(-2*np.pi*c)
+
+Ld = T0**2/np.abs(beta2)
+T1 = T0*np.sqrt(1+(L/Ld)**2)
+print(Tg, T1)
 
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.plot(lambdas, Dm, 'k-.', label="$D_M$", lw=2)

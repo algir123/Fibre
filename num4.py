@@ -44,7 +44,7 @@ visibilite = 1
 l = 0
 m = 1
 
-
+################# A ##################
 while diff > tolerance:
     n_core = get_n(lambda_bragg, x_geo2)
     n_gaine = get_n(lambda_bragg, 0)
@@ -69,17 +69,19 @@ while diff > tolerance:
 print('neff', neff)
 print(f"Longueur d'onde de Bragg convergée : {lambda_bragg:.4f} µm\n")
 
+################# B ##################
 kappa = np.pi/lambda_bragg*delta_n*visibilite*1e6
 print(kappa)
-reflectivite = np.tanh(kappa*L)
+reflectivite = np.tanh(kappa*L)**2
 
 print(f'Reflectivité Max: {(reflectivite*100):.2f} %')
 
 transmission = 1-reflectivite
-loss = 10*np.log10(transmission)
+loss = -10*np.log10(transmission)
 
 print(f'Loss dB {loss:.2f} dB')
 
+################# C ##################
 diff = 1
 iteration = 0
 
@@ -128,6 +130,6 @@ while diff > tolerance:
     diff = abs(lambda_new - lambda_bragg)
     lambda_bragg = lambda_new
     iteration += 1
-    #print(f"LP11 Iteration {iteration}: λ = {lambda_bragg:.6f} µm, n = {neff:.6f}")
+    # print(f"LP11 Iteration {iteration}: λ = {lambda_bragg:.6f} µm, n = {neff:.6f}")
 print('neff', neff)
 print(f"Longueur d'onde de Bragg convergée : {lambda_bragg:.4f} µm\n")

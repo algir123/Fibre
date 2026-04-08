@@ -68,8 +68,6 @@ neff_myagi = []
 neff_eqdiff = []
 Gamma = []
 
-step = 1e-5 # Pas de dérivation (ajustable selon la précision voulue)
-
 for mode in modes:
     l = int(mode[2])
     m = int(mode[3])
@@ -96,7 +94,7 @@ for mode in modes:
     V_start = u_val-1e-8
     V_end = V
     
-    sol = solve_ivp(lambda V, u: eq_diff(V, u, l), t_span=(V_start, V_end), y0=[V_start], rtol=1e-8)
+    sol = solve_ivp(lambda V, u_eq: eq_diff(V, u_eq, l), t_span=(V_start, V_end), y0=[V_start], rtol=1e-8)
     u_val = sol.y[0][-1]
     u_eqdiff.append(u_val)
     
